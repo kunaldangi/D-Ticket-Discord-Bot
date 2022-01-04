@@ -4,7 +4,7 @@ D-Ticket is a discord bot for ticket management system. This is not final produc
 ### Key Features:-
 - Ticket service can be enable or disable.
 - Role support Ticket Manager and Ticket Admin (both have different features)
-- Cannot create more then 10 tickets, in-case abuse of more tickets you can can it as you want.
+- Cannot create more then 10 tickets, in-case abuse of more tickets you can change it as you want.
 
 ## Installation
 

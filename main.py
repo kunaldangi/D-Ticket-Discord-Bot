@@ -42,7 +42,7 @@ async def on_ready():
 
 # --- Ticket Create (tcreate) ---
 @bot.command()
-async def tcreate(ctx):
+async def tcreate(ctx, *,reason):
   if ticket_service == True:
     total_ticket_channel = 0
 
@@ -52,7 +52,7 @@ async def tcreate(ctx):
 
     global max_ticket_channel
     if total_ticket_channel >= max_ticket_channel:
-      return await ctx.send(f"{ctx.author.mention}, Please wait some time there are maxmimum ticket created!")
+      return await ctx.send(f"{ctx.author.mention} Please wait some time there are maxmimum ticket created!")
     
     ticket_channel = await ctx.guild.create_text_channel(f'ticket-{ctx.author.discriminator}')
 
@@ -64,10 +64,19 @@ async def tcreate(ctx):
     await ticket_channel.set_permissions(ctx.author, read_messages=True, send_messages=True)
 
     for role in ctx.guild.roles:
-      if "Ticket Manager" in str(role) or "Ticket Admin" in str(role):
+      if ticket_manager_role in str(role) or ticket_admin_role in str(role):
         await ticket_channel.set_permissions(role, read_messages=True, send_messages=True)
-    
+
     await ticket_channel.send(f"{ctx.author.mention}, Ticket has been created!")
+    
+    # Embed Message
+    embed = discord.Embed(title="Ticket", description="Please wait support will be with you shortly.", colour=ctx.author.colour)
+    embed.set_thumbnail(url=ctx.bot.user.avatar_url)
+    embed.add_field(name="Created By:", value=f"{ctx.author.name}", inline=True)
+    embed.add_field(name="Reason:", value=f"{reason}", inline=True)
+    embed.set_footer(text="D-Ticket", icon_url=ctx.bot.user.avatar_url)
+
+    await ticket_channel.send(embed=embed)
   else:
     await ctx.send(f"{ctx.author.mention}, Currently ticket service is off by admins. Please try again later or contact to server admin!")
 
@@ -99,8 +108,6 @@ async def tclose(ctx, *, reason:str):
       
     else:
       return await ctx.channel.send("Your ticket is not found or ticket has already closed.")
-
-  
 
       
 
@@ -184,23 +191,29 @@ async def tservice(ctx, state:str):
 
 # --- Ticket Close ---
 @tclose.error
+async def tcreate_error(ctx, error):
+  if isinstance(error, commands.MissingRequiredArgument):
+    await ctx.send(f"{ctx.author.mention} Correct Usage: `tcreate [reason]`")
+
+# --- Ticket Close ---
+@tclose.error
 async def tclose_error(ctx, error):
   if isinstance(error, commands.MissingRequiredArgument):
-    await ctx.send(f"{ctx.author.mention}, Correct Usage: `tclose [reason]`")
+    await ctx.send(f"{ctx.author.mention} Correct Usage: `tclose [reason]`")
 
 # --- Ticket Set Admin (tsetadmin)
 @tsetadmin.error
 async def tsetadmin_error(ctx, error):
   if isinstance(error, commands.MissingRequiredArgument):
-    await ctx.send(f"{ctx.author.mention}, Correct Usage: `tsetadmin [@member]`")
+    await ctx.send(f"{ctx.author.mention} Correct Usage: `tsetadmin [@member]`")
 
 # --- Ticket Set Manager (tsetmanager)
 @tsetmanager.error
 async def tsetmanager_error(ctx, error):
   if isinstance(error, commands.MissingPermissions):
-    await ctx.send(f"{ctx.author.mention}, You don't have permission to use this command.")
+    await ctx.send(f"{ctx.author.mention} You don't have permission to use this command.")
   if isinstance(error, commands.MissingRequiredArgument):
-    await ctx.send(f"{ctx.author.mention}, Correct Usage: `!dtsetmanager [(mention)member]`")
+    await ctx.send(f"{ctx.author.mention} Correct Usage: `!dtsetmanager [(mention)member]`")
   
 
     
@@ -224,4 +237,4 @@ def is_ticket_admin(ctx):
     return False
 
 
-bot.run('-TOKEN_HERE-') # Token as a string
+bot.run('NzY0MzE1MzA1MzU0MTk5MDYx.X4EeGQ.YMd_aFSR8GFW-Ptjazm3V4ZO7BY') # Token as a string

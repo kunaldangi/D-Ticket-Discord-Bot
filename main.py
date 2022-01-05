@@ -237,4 +237,4 @@ def is_ticket_admin(ctx):
     return False
 
 
-bot.run('NzY0MzE1MzA1MzU0MTk5MDYx.X4EeGQ.YMd_aFSR8GFW-Ptjazm3V4ZO7BY') # Token as a string
+bot.run('-TOKEN-HERE') # Token as a string

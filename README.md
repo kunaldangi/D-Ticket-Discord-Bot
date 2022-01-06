@@ -1,6 +1,6 @@
 # D-Ticket Discord Bot
 
-D-Ticket is a discord bot for ticket management system using discord.py api. This is not final product is currently being in development stage, stay connected for new updates and changes. Also please report if you see any bugs.
+D-Ticket is a discord bot for ticket management system using discord.py api. This is not final product, is currently being in development stage, stay connected for new updates and changes. Also please report if you see any bugs.
 ### Key Features:-
 - Ticket service can be enable or disable.
 - Embed Support
@@ -22,11 +22,12 @@ Commands:-
   - !dttcreate : to be create the ticket
   - !dtclose : to close the ticket (ticket only closed by ticket admin or ticket manager, user just only can make a close request)
   - !tsetadmin : to set a ticket admin with role name 'Ticket Admin' (Ticket Manager can use this command)
-  - !tsetmanager : to set a ticket manager with role name 'Ticket Manager' (User with adminstrator permission can use this command)
+  - !dtsetmanager : to set a ticket manager with role name 'Ticket Manager' (User with adminstrator permission can use this command)
 ```
 Extra Feature:-
 ``` 
-  - !tservice (extra feature) : you can enable or disable (on/off) ticket service so no one can abuse it by making ticket channels.
+  - !dtsetrole : to set a desire ticket manager role and ticket admin role. 
+  - !dtservice (extra feature) : you can enable or disable (on/off) ticket service so no one can abuse it by making ticket channels.
   - Ticket channels cannot be create more than 10 ticket channels.
 
 ```

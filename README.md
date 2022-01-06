@@ -1,6 +1,6 @@
 # D-Ticket Discord Bot
 
-D-Ticket is a discord bot for ticket management system. This is not final product is currently being in development stay connected for new updates and changes. Also please report if you see any bugs.
+D-Ticket is a discord bot for ticket management system using discord.py api. This is not final product is currently being in development stage, stay connected for new updates and changes. Also please report if you see any bugs.
 ### Key Features:-
 - Ticket service can be enable or disable.
 - Embed Support

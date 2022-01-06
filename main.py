@@ -9,40 +9,49 @@
 
 """
 """
+Version = 1.2
 COMMANDS:-
-  - !dttcreate : to be create the ticket
-  - !dtclose : to close the ticket (ticket only closed by ticket admin or ticket manager, user just only can make a close request)
-  - !tsetadmin : to set a ticket admin with role name 'Ticket Admin' (Ticket Manager can use this command)
-  - !tsetmanager : to set a ticket manager with role name 'Ticket Manager' (User with adminstrator permission can use this command)
-Extra Feature:-  
+  - !dttcreate (reason) : to be create the ticket
+  - !dtclose (reason) : to close the ticket (ticket only closed by ticket admin or ticket manager, user just only can make a close request)
+  - !tsetadmin (member) : to set a ticket admin with role name 'Ticket Admin' (Ticket Manager can use this command)
+  - !tsetmanager (member) : to set a ticket manager with role name 'Ticket Manager' (User with adminstrator permission can use this command)
+
+Extra Feature:-
   - !tservice (extra feature) : you can enable or disable (on/off) ticket service so noone can abuse it by make ticket channels.
+  - !tsetrole : 
   - Ticket channel cannot be create more than 10 ticket channels.
+  - tsetrole (ticket manager role) (ticket admin role) : you can set desire role for ticket manager and ticket admin 
 """
 
 import discord
 from discord.ext import commands
 from discord import Intents
+import json
 
 # --- Variable ---
 max_ticket_channel = 10
 ticket_service = True
-ticket_manager_role = "Ticket Manager" # Make these role for now
-ticket_admin_role = "Ticket Admin"
+ticket_manager_role = None
+ticket_admin_role = None
 
 bot = commands.Bot(command_prefix='!d', case_insensitive=True, intents=Intents.all())
 
 @bot.event
 async def on_ready():
+
+  # --- Bot Rich Presence ---
   game = discord.Game("Created by DeViL#7091") # You can change rich presence
   await bot.change_presence(status=discord.Status.online, activity=game)
 
   print(f'Bot is online.\n Bot Name: {bot.user}!')
 
+
+
 # ----- TICKET COMMANDS -----
 
 # --- Ticket Create (tcreate) ---
 @bot.command()
-async def tcreate(ctx, *,reason):
+async def tcreate(ctx, *,reason:str):
   if ticket_service == True:
     total_ticket_channel = 0
 
@@ -80,6 +89,7 @@ async def tcreate(ctx, *,reason):
   else:
     await ctx.send(f"{ctx.author.mention}, Currently ticket service is off by admins. Please try again later or contact to server admin!")
 
+
 # --- Ticket Close (tclose) ---
 @bot.command()
 async def tclose(ctx, *, reason:str):
@@ -100,7 +110,6 @@ async def tclose(ctx, *, reason:str):
         if str(ctx.channel.name) in str(tchannel.name):
 
           await tchannel.set_permissions(ctx.author, read_messages=False, send_messages=False)
-          await ctx.send(f"{ctx.author.mention}, Your ticket has been closed.")
           return await tchannel.send(f"{ctx.author.name} has requested to close the ticket. Reason: {reason}")
 
         else:
@@ -109,13 +118,49 @@ async def tclose(ctx, *, reason:str):
     else:
       return await ctx.channel.send("Your ticket is not found or ticket has already closed.")
 
-      
+
+# --- Setup (tsetrole) ---
+@bot.command()
+@commands.has_permissions(administrator=True)
+async def tsetrole(ctx, mrole:discord.Role, arole:discord.Role):
+
+  # -- Manager Role --
+  for managerrole in ctx.guild.roles:
+    if str(mrole.name) == str(managerrole.name):
+
+      global ticket_manager_role 
+      ticket_manager_role = str(managerrole.name)
+      break
+
+  else:
+    return await ctx.send(f"{ctx.author.mention} Failed to set ticket manager role. No role name found {mrole}")
+
+  # -- Admin Role --
+  for adminrole in ctx.guild.roles:
+    if str(arole.name) == str(adminrole.name):
+
+      global ticket_admin_role
+      ticket_admin_role = str(adminrole.name)
+      break
+
+  else:
+    return await ctx.send(f"{ctx.author.mention} Failed to set ticket admin role, No role name found {mrole} or {arole}")
+
+  embed = discord.Embed(title="Role Set", description=f"Successfully set the ticket roles.", colour=ctx.bot.user.colour)
+  embed.set_thumbnail(url=ctx.bot.user.avatar_url)
+  embed.add_field(name="Ticket Manager:", value=f"{ticket_manager_role}", inline=True)
+  embed.add_field(name="Ticket Admin:", value=f"{ticket_admin_role}", inline=True)
+  embed.set_footer(text="D-Ticket", icon_url=ctx.bot.user.avatar_url)
+  return await ctx.send(embed=embed)
 
 
 # --- Set Ticket Admin (tsetadmin) ---
 @bot.command()
 @commands.has_permissions(send_messages=True)
 async def tsetadmin(ctx, member:discord.Member):
+
+  if ticket_admin_role == None:
+    await ctx.send(f"{ctx.author.mention} Ticket admin role is not set. Please set it by `tsetrole`")
 
   if ctx.author.name == member.name:
     return await ctx.send(f"{ctx.author.mention} You cannot give ticket admin role to yourself")
@@ -130,7 +175,6 @@ async def tsetadmin(ctx, member:discord.Member):
             return await ctx.send(f"{ctx.author.mention}, Mention member already have ticket admin role.")
 
         else:
-
           try:
 
             await member.add_roles(discord.utils.get(ctx.guild.roles, name=ticket_admin_role),reason=None, atomic=True)
@@ -144,41 +188,63 @@ async def tsetadmin(ctx, member:discord.Member):
     else:
       await ctx.send(f"{ctx.author.mention}, You don't have access to set a ticket admin")
 
-# --- Set Ticket Manager (tsetmanger) ---
+
+# --- Set Ticket Manager (tsetmanager) ---
 @bot.command()
 @commands.has_permissions(manage_roles=True)
 async def tsetmanager(ctx, member:discord.Member):
+
+  if ticket_manager_role == None:
+    await ctx.send(f"{ctx.author.mention} Ticket manager role is not set. Please set it by `tsetrole`")
+
   if ctx.author.name == member.name:
     return await ctx.send(f"{ctx.author.mention}, You cannot give manager role to yourself.")
   
   else:
+
     for role in member.roles:
       if ticket_manager_role in str(role):
         return await ctx.send(f"{ctx.author.mention}, Mention member already have ticket manager role.")
+
     else:
       try:
+
         await member.add_roles(discord.utils.get(ctx.guild.roles, name=ticket_manager_role),reason=None, atomic=True)
         await ctx.send(f"{member.mention}, You are ")
         return await ctx.send(f"{ctx.author.mention}, `{member.name}` is now ticket manager")
+
       except Exception as error:
+
         await ctx.send(f"{ctx.author.mention}, Something went wrong!")
         return print(f"Member ticket admin add role error: {error}")
     
+
+# --- Service [On/Off] (tservice) ---
 @bot.command()
 async def tservice(ctx, state:str):
   global ticket_service
-  if is_ticket_manager(ctx) == True:
-    if state == "on" or state == "enable":
-      ticket_service = True
-      return await ctx.send(f"{ctx.author.mention}, Ticket service is set to `{state}`")
-    elif state == "off" or state == "disable":
-      ticket_service = False
-      return await ctx.send(f"{ctx.author.mention}, Ticket service is set to `{state}`")
+  
+  if ticket_manager_role != None:
+
+    if is_ticket_manager(ctx) == True:
+
+      if state == "on" or state == "enable":
+        ticket_service = True
+        return await ctx.send(f"{ctx.author.mention}, Ticket service is set to `{state}`")
+
+      elif state == "off" or state == "disable":
+        ticket_service = False
+        return await ctx.send(f"{ctx.author.mention}, Ticket service is set to `{state}`")
+
+      else:
+        await ctx.send(f"{ctx.author.mention}, You have send invaild input.")
+        await ctx.send(f"Correct Usage: tservice [on/off] or [enable/disable]")
+
     else:
-      await ctx.send(f"{ctx.author.mention}, You have send invaild input.")
-      await ctx.send(f"Correct Usage: tservice [on/off] or [enable/disable]")
+      await ctx.send(f"{ctx.author.mention}, You don't have permission to use this command.")
+  
   else:
-    await ctx.send(f"{ctx.author.mention}, You don't have permission to use this command.")
+    return await ctx.send(f"Ticket Manager Role is not set. Please set the role first by `tsetrole [@role (Ticket Manager Role)] [@role (Ticket Admin Role)]`")
 
 
 
@@ -189,30 +255,45 @@ async def tservice(ctx, state:str):
 
 # ----- ERROR HANDLER -----
 
-# --- Ticket Close ---
+# --- Ticket Create Error (tcreate) ---
 @tclose.error
 async def tcreate_error(ctx, error):
-  if isinstance(error, commands.MissingRequiredArgument):
+
+  if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
     await ctx.send(f"{ctx.author.mention} Correct Usage: `tcreate [reason]`")
 
-# --- Ticket Close ---
+# --- Ticket Close Error (tclose) ---
 @tclose.error
 async def tclose_error(ctx, error):
-  if isinstance(error, commands.MissingRequiredArgument):
+
+  if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
     await ctx.send(f"{ctx.author.mention} Correct Usage: `tclose [reason]`")
 
-# --- Ticket Set Admin (tsetadmin)
-@tsetadmin.error
-async def tsetadmin_error(ctx, error):
-  if isinstance(error, commands.MissingRequiredArgument):
-    await ctx.send(f"{ctx.author.mention} Correct Usage: `tsetadmin [@member]`")
+# --- Set Role (tsetrole) ---
+@tsetrole.error
+async def tsetrole_error(ctx, error):
 
-# --- Ticket Set Manager (tsetmanager)
-@tsetmanager.error
-async def tsetmanager_error(ctx, error):
   if isinstance(error, commands.MissingPermissions):
     await ctx.send(f"{ctx.author.mention} You don't have permission to use this command.")
-  if isinstance(error, commands.MissingRequiredArgument):
+
+  if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
+    await ctx.send(f"{ctx.author.mention} Correct Usage: `tsetrole [@role (Ticket Manager Role)] [@role (Ticket Admin Role)]`")
+
+# --- Ticket Set Admin (tsetadmin) ---
+@tsetadmin.error
+async def tsetadmin_error(ctx, error):
+
+  if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
+    await ctx.send(f"{ctx.author.mention} Correct Usage: `tsetadmin [@member]`")
+
+# --- Ticket Set Manager (tsetmanager) ---
+@tsetmanager.error
+async def tsetmanager_error(ctx, error):
+
+  if isinstance(error, commands.MissingPermissions):
+    await ctx.send(f"{ctx.author.mention} You don't have permission to use this command.")
+
+  if isinstance(error, commands.MissingRequiredArgument) or isinstance(error, commands.BadArgument):
     await ctx.send(f"{ctx.author.mention} Correct Usage: `!dtsetmanager [(mention)member]`")
   
 
@@ -237,4 +318,10 @@ def is_ticket_admin(ctx):
     return False
 
 
-bot.run('-TOKEN-HERE') # Token as a string
+
+# --- Token Json ---
+with open("./config.json", 'r') as JsonTokenFile:
+  token_data = json.load(JsonTokenFile)
+  TOKEN = token_data["TOKEN"]
+
+bot.run(TOKEN) # Token as a string
